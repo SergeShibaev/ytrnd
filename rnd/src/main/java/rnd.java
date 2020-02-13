@@ -1,5 +1,4 @@
 import gui.MainWindow;
-//import http.HttpRequest;
 
 class rnd {
 
@@ -13,7 +12,7 @@ class rnd {
   }
 
   private static void createGUI() {
-    final MainWindow w = new MainWindow();
+    MainWindow w = new MainWindow();
     w.addDebugMessage("Initialization complete");
   }
 }

@@ -1,27 +1,26 @@
 package http;
 
-//import javax.net.ssl.HttpsURLConnection;
 import java.net.URL;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
-//import java.io.DataOutputStream;
 import java.net.HttpURLConnection;
 
-    /*
-     * HttpRequest r = new HttpRequest(); String response =
-     * r.sendGet("http://youtube.com");
-     *
-     * System.out.println(response);
-     */
 
 public class HttpRequest {
+
+  private static String m_Key = "AIzaSyBTYY47NBuSMFtHGhDg3zj5Dr5iaKwScy0";
 
   public HttpRequest() {
     HttpURLConnection.setFollowRedirects(true);
   }
 
-  public String sendGet(String url) throws Exception {
+  public static String sendGet(String url) throws Exception {
     HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 
     con.setRequestMethod("GET");
@@ -33,7 +32,8 @@ public class HttpRequest {
     StringBuilder response = new StringBuilder();
 
     try {
-      Reader streamReader = new InputStreamReader(con.getInputStream());
+      Reader streamReader = status != 400 ? new InputStreamReader(con.getInputStream())
+                                          : new InputStreamReader(con.getErrorStream());
       BufferedReader buf = new BufferedReader(streamReader);
       String line;
 
@@ -43,10 +43,12 @@ public class HttpRequest {
       buf.close();
     }
     catch(Exception e) {
-      System.out.println(e.getMessage());
+      response.append(e.getMessage());
     }
     finally {
       response.append(con.getResponseCode())
+      .append(" status=")
+      .append(status)
       .append(" ")
       .append(con.getResponseMessage())
       .append("\n");
@@ -55,5 +57,37 @@ public class HttpRequest {
     }
 
     return response.toString();
+  }
+
+  public static String getMessages(String videoId) throws Exception {
+    String pageToken = "";
+    JSONArray res = new JSONArray();
+
+    while (res.length() == 0 || pageToken != "")
+    {
+      String request = "https://www.googleapis.com/youtube/v3/commentThreads?key=" + m_Key +
+                       "&textFormat=plainText&part=snippet&videoId=" + videoId + "&maxResults=50";
+      if ( pageToken != "" )
+        request += "&pageToken=" + pageToken;
+
+      JSONObject jObj = new JSONObject(sendGet(request));
+
+      try {
+        JSONArray arr = jObj.optJSONArray("items");
+        for (int i = 0; i < arr.length(); ++i)
+          res.put(arr.getJSONObject(i));
+        pageToken = jObj.getString("nextPageToken");
+      }
+      catch (JSONException ex) {
+        break;
+      }
+      catch (Exception ex) {
+        System.out.println(ex.getStackTrace());
+        break;
+      }
+    }
+
+    return new JSONObject().put("items", (JSONArray)res)
+                           .toString();
   }
 }
