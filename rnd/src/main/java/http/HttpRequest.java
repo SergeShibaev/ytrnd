@@ -14,7 +14,7 @@ import java.net.HttpURLConnection;
 
 public class HttpRequest {
 
-  private static String m_Key = "AIzaSyBTYY47NBuSMFtHGhDg3zj5Dr5iaKwScy0";
+  private static String m_Key = "";
 
   public HttpRequest() {
     HttpURLConnection.setFollowRedirects(true);

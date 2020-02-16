@@ -30,11 +30,12 @@ public class MainWindow extends JFrame implements ActionListener {
   private static final long serialVersionUID = 5975871377366251408L;
 
   private JTextPane   m_debugWnd;
+  private JPanel      m_commPane;
 
   public MainWindow() {
     setSize(1200, 800);
     setTitle("Randomizer");
-    setLocation(100, 100);
+    setLocation(100, 0);
     setResizable(false);
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -63,25 +64,15 @@ public class MainWindow extends JFrame implements ActionListener {
 
     // settings
     JPanel settPane = new JPanel();
-    settPane.setSize(300, 60);
+    settPane.setSize(450, 40);
     settPane.setLocation(10, 10);
     settPane.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
     settPane.setLayout(null);
     contentPane.add(settPane);
 
-    JLabel channelId = new JLabel("Channel ID");
-    channelId.setSize(100, 20);
-    channelId.setLocation(10, 10);
-    settPane.add(channelId);
-
-    JTextField chanId = new JTextField();
-    chanId.setSize(150, 20);
-    chanId.setLocation(channelId.getX() + channelId.getWidth(), channelId.getY());
-    settPane.add(chanId);
-
     JLabel videoId = new JLabel("Video Id");
     videoId.setSize(100, 20);
-    videoId.setLocation(channelId.getX(), channelId.getY() + channelId.getHeight() + 5);
+    videoId.setLocation(10, 10);
 
     JTextField vidId = new JTextField();
     vidId.setSize(150, 20);
@@ -89,17 +80,20 @@ public class MainWindow extends JFrame implements ActionListener {
     settPane.add(videoId);
     settPane.add(vidId);
 
-    // commentaries
-    JPanel commPane = new JPanel();
-    commPane.setLocation(10, settPane.getY() + settPane.getHeight() + 10);
-    commPane.setSize(500, sp.getY() - commPane.getY() - 20);
-    commPane.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
-
-    JButton loadMsgBtn = new AButton(new Point(10, 10), "Load comments", null, "readmsg");
+    JButton loadMsgBtn = new AButton(new Point(vidId.getX() + vidId.getWidth() + 10, vidId.getY() - 4), "Load comments", null, "readmsg");
     loadMsgBtn.addActionListener(this);
-    commPane.add(loadMsgBtn);
-    contentPane.add(commPane);
+    settPane.add(loadMsgBtn);
 
+    // commentaries
+    m_commPane = new JPanel();
+    m_commPane.setLocation(10, settPane.getY() + settPane.getHeight() + 10);
+    m_commPane.setSize(500, sp.getY() - m_commPane.getY() - 20);
+    m_commPane.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+    m_commPane.setLayout(null);
+
+    m_commPane.add(new MessagePane(new Point(10, 10), new YUser("qwerty", "", ""), "Message"));
+
+    contentPane.add(m_commPane);
     setVisible(true);
   }
 
@@ -110,6 +104,8 @@ public class MainWindow extends JFrame implements ActionListener {
       try {
         String comms = HttpRequest.getMessages("ZrwqnZdjF6c");
         showUsers(RequestParser.collectUsers(comms));
+
+        //m_commPane.add(new MessagePane(new Point(10, 10), new YUser("name", "", ""), "Message"));
       }
       catch(Exception ex) {
         addDebugMessage(ex.getMessage());
@@ -142,5 +138,30 @@ final class AButton extends JButton {
     setLocation(Pos);
     setSize(getPreferredSize());
     setActionCommand(Action);
+  }
+}
+
+final class MessagePane extends JPanel {
+
+  private static final long serialVersionUID = 1L;
+
+  public MessagePane(Point Pos, YUser User, String Message) {
+    setLocation(Pos);
+    setLayout(null);
+    
+    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+
+    JLabel userLabel = new JLabel(User.Name);
+    userLabel.setLocation(Pos);
+    userLabel.setSize(userLabel.getPreferredSize());
+    add(userLabel);
+
+    JLabel comment = new JLabel(Message);
+    comment.setLocation(userLabel.getX(), userLabel.getY() + userLabel.getWidth());
+    comment.setSize(comment.getPreferredSize());
+    add(comment);
+
+    //setSize(getPreferredSize());
+    setSize(450, 100);
   }
 }
