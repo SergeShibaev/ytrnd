@@ -2,7 +2,7 @@ package gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashSet;
+import java.util.Set;
 import java.awt.Point;
 import java.awt.Color;
 import java.awt.Insets;
@@ -121,7 +121,7 @@ public class MainWindow extends JFrame implements ActionListener {
     m_debugWnd.replaceSelection(msg + "\n");
   }
 
-  public void showUsers(HashSet<YUser> users) {
+  public void showUsers(Set<YUser> users) {
     for (YUser user : users)
       addDebugMessage(user.Name);
   }
@@ -148,7 +148,7 @@ final class MessagePane extends JPanel {
   public MessagePane(Point Pos, YUser User, String Message) {
     setLocation(Pos);
     setLayout(null);
-    
+
     setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
 
     JLabel userLabel = new JLabel(User.Name);

@@ -1,29 +1,28 @@
 package http;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import org.json.*;
 
 import data.YUser;
 
 public class RequestParser {
-  public static HashSet<YUser> collectUsers(String str) {
+  public static Set<YUser> collectUsers(String str) {
 
-    HashSet<YUser> users = new HashSet<YUser>();
-    JSONObject jObj = new JSONObject(str);
-    JSONArray items = jObj.getJSONArray("items");
-    HashSet<String> names = new HashSet<String>();    // names should be unique
+    Set<YUser> users = new HashSet<YUser>();
+    JSONArray items = new JSONObject(str).getJSONArray("items");
 
     for (int i = 0; i < items.length(); ++i)
     {
-      JSONObject arr = items.getJSONObject(i);
-      JSONObject snippet = arr.getJSONObject("snippet").getJSONObject("topLevelComment").getJSONObject("snippet");
+      JSONObject snippet = items.getJSONObject(i)
+                                .getJSONObject("snippet")
+                                .getJSONObject("topLevelComment")
+                                .getJSONObject("snippet");
 
-      if (names.add(snippet.getString("authorDisplayName"))) {
-        users.add(new YUser(snippet.getString("authorDisplayName"),
-                            snippet.getString("authorProfileImageUrl"),
-                            snippet.getJSONObject("authorChannelId").getString("value")));
-      }
+      users.add(new YUser(snippet.getString("authorDisplayName"),
+                          snippet.getString("authorProfileImageUrl"),
+                          snippet.getJSONObject("authorChannelId").getString("value")));
     }
 
     return users;
