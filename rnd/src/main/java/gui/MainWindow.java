@@ -2,9 +2,13 @@ package gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Set;
 import java.awt.Point;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Insets;
 
 import javax.swing.BorderFactory;
@@ -14,13 +18,19 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.border.EtchedBorder;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
+import org.json.JSONException;
+
+import data.YComment;
 import data.YUser;
 import http.HttpRequest;
 import http.RequestParser;
@@ -29,8 +39,9 @@ public class MainWindow extends JFrame implements ActionListener {
 
   private static final long serialVersionUID = 5975871377366251408L;
 
-  private JTextPane   m_debugWnd;
-  private JPanel      m_commPane;
+  private JTextPane m_comms;
+  private JTextPane m_debugWnd;
+  private JTextField m_videoId;
 
   public MainWindow() {
     setSize(1200, 800);
@@ -57,8 +68,8 @@ public class MainWindow extends JFrame implements ActionListener {
     m_debugWnd.setBorder(BorderFactory.createLoweredBevelBorder());
     m_debugWnd.setBackground(Color.DARK_GRAY);
     m_debugWnd.setMargin(new Insets(25, 25, 25, 25));
-    m_debugWnd.setCharacterAttributes(StyleContext.getDefaultStyleContext()
-                                                  .addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.WHITE), false);
+    m_debugWnd.setCharacterAttributes(StyleContext.getDefaultStyleContext().addAttribute(SimpleAttributeSet.EMPTY,
+        StyleConstants.Foreground, Color.WHITE), false);
 
     contentPane.add(sp);
 
@@ -74,26 +85,30 @@ public class MainWindow extends JFrame implements ActionListener {
     videoId.setSize(100, 20);
     videoId.setLocation(10, 10);
 
-    JTextField vidId = new JTextField();
-    vidId.setSize(150, 20);
-    vidId.setLocation(videoId.getX() + videoId.getWidth(), videoId.getY());
+    m_videoId = new JTextField();
+    m_videoId.setText("ZrwqnZdjF6c");
+    m_videoId.setSize(150, 20);
+    m_videoId.setLocation(videoId.getX() + videoId.getWidth(), videoId.getY());
     settPane.add(videoId);
-    settPane.add(vidId);
+    settPane.add(m_videoId);
 
-    JButton loadMsgBtn = new AButton(new Point(vidId.getX() + vidId.getWidth() + 10, vidId.getY() - 4), "Load comments", null, "readmsg");
+    JButton loadMsgBtn = new AButton(new Point(m_videoId.getX() + m_videoId.getWidth() + 10, m_videoId.getY() - 4),
+        "Load comments", null, "readmsg");
     loadMsgBtn.addActionListener(this);
     settPane.add(loadMsgBtn);
 
     // commentaries
-    m_commPane = new JPanel();
-    m_commPane.setLocation(10, settPane.getY() + settPane.getHeight() + 10);
-    m_commPane.setSize(500, sp.getY() - m_commPane.getY() - 20);
-    m_commPane.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
-    m_commPane.setLayout(null);
+    m_comms = new JTextPane();
+    JScrollPane commScroller = new JScrollPane(m_comms);
+    commScroller.setLocation(10, settPane.getY() + settPane.getHeight() + 10);
+    commScroller.setSize(new Dimension(getWidth() / 2, sp.getY() - commScroller.getY() - 20));
+    commScroller.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+    contentPane.add(commScroller);
 
-    m_commPane.add(new MessagePane(new Point(10, 10), new YUser("qwerty", "", ""), "Message"));
+    JTextArea comment = new JTextArea();
+    comment.setLineWrap(true);
+    comment.setWrapStyleWord(true);
 
-    contentPane.add(m_commPane);
     setVisible(true);
   }
 
@@ -102,16 +117,13 @@ public class MainWindow extends JFrame implements ActionListener {
       addDebugMessage("Reading comments...");
 
       try {
-        String comms = HttpRequest.getMessages("ZrwqnZdjF6c");
+        String comms = HttpRequest.getMessages(m_videoId.getText().trim());
         showUsers(RequestParser.collectUsers(comms));
-
-        //m_commPane.add(new MessagePane(new Point(10, 10), new YUser("name", "", ""), "Message"));
-      }
-      catch(Exception ex) {
+        showComms(comms);
+      } catch (Exception ex) {
         addDebugMessage(ex.getMessage());
       }
-    }
-    else {
+    } else {
       addDebugMessage("Unknown button pressed!");
     }
   }
@@ -124,6 +136,48 @@ public class MainWindow extends JFrame implements ActionListener {
   public void showUsers(Set<YUser> users) {
     for (YUser user : users)
       addDebugMessage(user.Name);
+  }
+
+  public void showComms(String comms) {
+    try {
+      for (int i = 0; i < 1000; ++i) {
+        YComment comm = RequestParser.getComment(comms, i);
+        addComm(comm);
+      }
+    } catch (JSONException ex) {
+      // no more comments
+      m_comms.setCaretPosition(0);
+      m_comms.setEditable(false);
+    }
+  }
+
+  private void addComm(YComment comm) {
+    Document doc = m_comms.getStyledDocument();
+    SimpleAttributeSet set = new SimpleAttributeSet();
+
+    StyleConstants.setBold(set, true);
+    StyleConstants.setForeground(set, Color.BLUE);
+    m_comms.setCharacterAttributes(set, true);
+
+    try {
+      doc.insertString(doc.getLength(), comm.User.Name, set);
+
+      Date date = new SimpleDateFormat("yyyy-mm-dd").parse(comm.Published);
+      set = new SimpleAttributeSet();
+      StyleConstants.setForeground(set, Color.DARK_GRAY);
+      StyleConstants.setItalic(set, true);
+      StyleConstants.setFontSize(set, 10);
+      doc.insertString(doc.getLength(), "\t" + new SimpleDateFormat("dd/mm/yyyy").format(date) + "\n", set);
+
+      set = new SimpleAttributeSet();
+      doc.insertString(doc.getLength(), comm.Text + "\n\n", set);
+    } catch (BadLocationException e) {
+      e.printStackTrace();
+      addDebugMessage(e.getMessage());
+    } catch (ParseException e) {
+      e.printStackTrace();
+      addDebugMessage(e.getMessage());
+    }
   }
 }
 
@@ -138,30 +192,5 @@ final class AButton extends JButton {
     setLocation(Pos);
     setSize(getPreferredSize());
     setActionCommand(Action);
-  }
-}
-
-final class MessagePane extends JPanel {
-
-  private static final long serialVersionUID = 1L;
-
-  public MessagePane(Point Pos, YUser User, String Message) {
-    setLocation(Pos);
-    setLayout(null);
-
-    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
-
-    JLabel userLabel = new JLabel(User.Name);
-    userLabel.setLocation(Pos);
-    userLabel.setSize(userLabel.getPreferredSize());
-    add(userLabel);
-
-    JLabel comment = new JLabel(Message);
-    comment.setLocation(userLabel.getX(), userLabel.getY() + userLabel.getWidth());
-    comment.setSize(comment.getPreferredSize());
-    add(comment);
-
-    //setSize(getPreferredSize());
-    setSize(450, 100);
   }
 }

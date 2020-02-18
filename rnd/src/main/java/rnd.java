@@ -4,11 +4,7 @@ class rnd {
 
   public static void main(final String[] args) throws Exception {
 
-    javax.swing.SwingUtilities.invokeLater(new Runnable() {
-      public void run() {
-        createGUI();
-      }
-    });
+    javax.swing.SwingUtilities.invokeLater(() -> createGUI());
   }
 
   private static void createGUI() {
